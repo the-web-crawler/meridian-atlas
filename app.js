@@ -1,6 +1,7 @@
 import { METRICS, COUNTRIES } from "./data.js";
 
 const WORLD_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json";
+const NODATA = "#1c262e";
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const state = {
@@ -67,7 +68,7 @@ function formatVal(v, metric = state.metric) {
   return String(v) + (m?.unit ? " " + m.unit : "");
 }
 function compact(v, metric) {
-  if (v == null) return "—";
+  if (v == null) return "\u2014";
   if (metric === "pop") {
     if (v >= 1e9) return (v / 1e9).toFixed(2) + "B";
     if (v >= 1e6) return (v / 1e6).toFixed(v >= 1e8 ? 0 : 1) + "M";
@@ -108,18 +109,19 @@ function buildColor() {
 
 function paint() {
   buildColor();
-  gMap.selectAll(".country")
-    .transition()
-    .duration(reduced ? 0 : 420)
-    .attr("fill", (d) => {
-      const v = val(d.id);
-      return v == null ? null : state.color(v);
-    })
+  gMap
+    .selectAll(".country")
     .attr("class", (d) => {
       const cls = ["country"];
       if (val(d.id) == null) cls.push("nodata");
       if (state.selected && padId(d.id) === padId(state.selected)) cls.push("is-selected");
       return cls.join(" ");
+    })
+    .transition()
+    .duration(reduced ? 0 : 420)
+    .attr("fill", (d) => {
+      const v = val(d.id);
+      return v == null ? NODATA : state.color(v);
     });
   drawLegend();
   if (state.selected) renderPanel(state.selected);
@@ -141,7 +143,10 @@ function size() {
   el.svg.attr("viewBox", `0 0 ${state.width} ${state.height}`).attr("width", state.width).attr("height", state.height);
   const pad = state.width < 720 ? 8 : 28;
   state.projection.fitExtent(
-    [[pad, pad + 8], [state.width - pad - (state.width > 900 ? 20 : 0), state.height - pad]],
+    [
+      [pad, pad + 8],
+      [state.width - pad, state.height - pad],
+    ],
     { type: "Sphere" }
   );
   state.path = d3.geoPath(state.projection);
@@ -155,7 +160,7 @@ function showTip(event, feature) {
   el.tooltip.innerHTML = `
     <div class="name">${feature.properties.name}</div>
     <div class="val">${formatVal(v)}</div>
-    <div class="meta">${rk ? `Rank ${rk.place} of ${rk.total}` : "No sample data"}${r ? " · " + r.region : ""}</div>`;
+    <div class="meta">${rk ? `Rank ${rk.place} of ${rk.total}` : "No sample data"}${r ? " \u00b7 " + r.region : ""}</div>`;
   el.tooltip.classList.add("show");
   moveTip(event);
 }
@@ -226,7 +231,7 @@ function renderPanel(id) {
     return `
       <div class="bar-row">
         <span class="k">${metric.short}</span>
-        <span class="v">${compact(mv, metric.id)}${rkM ? ` · #${rkM.place}` : ""}</span>
+        <span class="v">${compact(mv, metric.id)}${rkM ? ` \u00b7 #${rkM.place}` : ""}</span>
         <div class="track"><span style="width:${pct}%"></span></div>
       </div>`;
   }).join("");
@@ -240,9 +245,9 @@ function renderPanel(id) {
     <div class="bars">${bars}</div>
     <dl class="facts">
       <div class="fact"><dt>ISO numeric</dt><dd>${padId(id)}</dd></div>
-      <div class="fact"><dt>Region</dt><dd>${r?.region ?? "—"}</dd></div>
+      <div class="fact"><dt>Region</dt><dd>${r?.region ?? "\u2014"}</dd></div>
     </dl>
-    <p class="panel-foot">Bars show each figure relative to the highest country in the sample. Figures are compiled sample values, circa 2023–24 — not an official release.</p>`;
+    <p class="panel-foot">Bars show each figure relative to the highest country in the sample. Figures are compiled sample values, circa 2023\u201324 \u2014 not an official release.</p>`;
 }
 
 function renderMetricSwitcher() {
@@ -343,17 +348,8 @@ async function boot() {
 
   size();
 
-  gMap
-    .append("path")
-    .datum({ type: "Sphere" })
-    .attr("class", "ocean")
-    .attr("d", state.path);
-
-  gMap
-    .append("path")
-    .datum(d3.geoGraticule10())
-    .attr("class", "graticule")
-    .attr("d", state.path);
+  gMap.append("path").datum({ type: "Sphere" }).attr("class", "ocean").attr("d", state.path);
+  gMap.append("path").datum(d3.geoGraticule10()).attr("class", "graticule").attr("d", state.path);
 
   gMap
     .selectAll(".country")
@@ -379,7 +375,7 @@ async function boot() {
 
   paint();
   el.loader.classList.add("hide");
-  el.status.textContent = metricDef().hint + " · drag to pan, scroll to zoom";
+  el.status.textContent = metricDef().hint + " \u00b7 drag to pan, scroll to zoom";
 
   new ResizeObserver(() => {
     const t = d3.zoomTransform(el.svg.node());
