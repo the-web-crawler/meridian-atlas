@@ -193,13 +193,13 @@ img, svg { display: block; }
   touch-action: none;
 }
 #map:active { cursor: grabbing; }
-.ocean { fill: var(--bg); }
-.graticule { fill: none; stroke: color-mix(in oklab, var(--fg) 7%, transparent); stroke-width: 0.4; }
+.ocean { fill: var(--bg); pointer-events: none; }
+.graticule { fill: none; stroke: color-mix(in oklab, var(--fg) 7%, transparent); stroke-width: 0.4; pointer-events: none; }
 .country {
   stroke: var(--map-stroke);
   stroke-width: 0.4;
   stroke-linejoin: round;
-  transition: fill 400ms var(--ease), stroke 160ms var(--ease), stroke-width 160ms var(--ease), filter 160ms var(--ease);
+  transition: fill 400ms var(--ease), stroke 160ms var(--ease), filter 160ms var(--ease);
 }
 .country:hover, .country.is-hover {
   stroke: var(--fg);
@@ -211,7 +211,6 @@ img, svg { display: block; }
   stroke-width: 1.6;
   filter: brightness(1.12);
 }
-.country.is-dim { opacity: 0.38; }
 .country.nodata { fill: var(--map-nodata); }
 
 .hud {
@@ -388,7 +387,6 @@ img, svg { display: block; }
   flex-direction: column;
   gap: 18px;
 }
-.hero-stat { }
 .hero-stat .label {
   font-size: 0.72rem;
   letter-spacing: 0.14em;
